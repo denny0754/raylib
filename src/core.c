@@ -466,6 +466,19 @@ static int screenshotCounter = 0;           // Screenshots counter
 static int gifFramesCounter = 0;            // GIF frames counter
 static bool gifRecording = false;           // GIF recording state
 #endif
+
+// Custom Input and Window related Callbacks to be set by users
+static CustomKeyCallback customKeyCallback = NULL;
+static CustomMouseButtonCallback customMouseButtonCallback = NULL;
+static CustomMouseCursorPosCallback customMouseCursorPosCallback = NULL;
+static CustomCharCallback customCharCallback = NULL;
+static CustomCursorEnterCallback customCursorEnterCallback = NULL;
+static CustomWindowSizeCallback customWindowSizeCallback = NULL;
+static CustomWindowIconifyCallback customWindowIconifyCallback = NULL;
+static CustomWindowFocusCallback customWindowFocusCallback = NULL;
+static CustomWindowDropCallback customWindowDropCallback = NULL;
+static CustomWindowMaximizeCallback customWindowMaximizeCallback = NULL;
+
 //-----------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------
@@ -3786,9 +3799,15 @@ static void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
     CORE.Input.Mouse.currentWheelMove = (int)yoffset;
 }
 
+
 // GLFW3 Keyboard Callback, runs on key pressed
 static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
+    if(customKeyCallback)
+    {
+        customKeyCallback(key, scancode, action, mods);
+        return;
+    }
     if (key == CORE.Input.Keyboard.exitKey && action == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(CORE.Window.handle, GLFW_TRUE);
@@ -3849,12 +3868,18 @@ static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, i
         // to work properly with our implementation (IsKeyDown/IsKeyUp checks)
         if (action == GLFW_RELEASE) CORE.Input.Keyboard.currentKeyState[key] = 0;
         else CORE.Input.Keyboard.currentKeyState[key] = 1;
+
     }
 }
 
 // GLFW3 Mouse Button Callback, runs on mouse button pressed
 static void MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
+    if(customMouseButtonCallback)
+    {
+        customMouseButtonCallback(button, action, mods);
+        return;
+    }
     // WARNING: GLFW could only return GLFW_PRESS (1) or GLFW_RELEASE (0) for now,
     // but future releases may add more actions (i.e. GLFW_REPEAT)
     CORE.Input.Mouse.currentButtonState[button] = action;
@@ -3890,6 +3915,11 @@ static void MouseButtonCallback(GLFWwindow *window, int button, int action, int 
 // GLFW3 Cursor Position Callback, runs on mouse move
 static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 {
+    if(customMouseCursorPosCallback)
+    {
+        customMouseCursorPosCallback(x, y);
+        return;
+    }
     CORE.Input.Mouse.position.x = (float)x;
     CORE.Input.Mouse.position.y = (float)y;
     CORE.Input.Touch.position[0] = CORE.Input.Mouse.position;
@@ -3921,6 +3951,11 @@ static void MouseCursorPosCallback(GLFWwindow *window, double x, double y)
 // GLFW3 Char Key Callback, runs on key down (get unicode char value)
 static void CharCallback(GLFWwindow *window, unsigned int key)
 {
+    if(customCharCallback)
+    {
+        customCharCallback(key);
+        return;
+    }
     // NOTE: Registers any key down considering OS keyboard layout but
     // do not detects action events, those should be managed by user...
     // Ref: https://github.com/glfw/glfw/issues/668#issuecomment-166794907
@@ -3938,6 +3973,11 @@ static void CharCallback(GLFWwindow *window, unsigned int key)
 // GLFW3 CursorEnter Callback, when cursor enters the window
 static void CursorEnterCallback(GLFWwindow *window, int enter)
 {
+    if(customCursorEnterCallback)
+    {
+        customCursorEnterCallback(enter);
+        return;
+    }
     if (enter == true) CORE.Input.Mouse.cursorOnScreen = true;
     else CORE.Input.Mouse.cursorOnScreen = false;
 }
@@ -3946,6 +3986,11 @@ static void CursorEnterCallback(GLFWwindow *window, int enter)
 // NOTE: Window resizing not allowed by default
 static void WindowSizeCallback(GLFWwindow *window, int width, int height)
 {
+    if(customWindowSizeCallback)
+    {
+        customWindowSizeCallback(width, height);
+        return;
+    }
     SetupViewport(width, height);    // Reset viewport and projection matrix for new size
 
     // Set current screen size
@@ -3962,6 +4007,11 @@ static void WindowSizeCallback(GLFWwindow *window, int width, int height)
 // GLFW3 WindowIconify Callback, runs when window is minimized/restored
 static void WindowIconifyCallback(GLFWwindow *window, int iconified)
 {
+    if(customWindowIconifyCallback)
+    {
+        customWindowIconifyCallback(iconified);
+        return;
+    }
     if (iconified) CORE.Window.minimized = true;  // The window was iconified
     else CORE.Window.minimized = false;           // The window was restored
 }
@@ -3969,6 +4019,11 @@ static void WindowIconifyCallback(GLFWwindow *window, int iconified)
 // GLFW3 WindowFocus Callback, runs when window get/lose focus
 static void WindowFocusCallback(GLFWwindow *window, int focused)
 {
+    if(customWindowFocusCallback)
+    {
+        customWindowFocusCallback(focused);
+        return;
+    }
     if (focused) CORE.Window.focused = true;    // The window was focused
     else CORE.Window.focused = false;           // The window lost focus
 }
@@ -3978,6 +4033,11 @@ static void WindowFocusCallback(GLFWwindow *window, int focused)
 // Everytime new files are dropped, old ones are discarded
 static void WindowDropCallback(GLFWwindow *window, int count, const char **paths)
 {
+    if(customWindowDropCallback)
+    {
+        customWindowDropCallback(count, paths);
+        return;
+    }
     ClearDroppedFiles();
 
     CORE.Window.dropFilesPath = (char **)RL_MALLOC(sizeof(char *)*count);
@@ -3993,9 +4053,66 @@ static void WindowDropCallback(GLFWwindow *window, int count, const char **paths
 
 static void WindowMaximizeCallback(GLFWwindow *window, int maximized)
 {
+    if(customWindowMaximizeCallback)
+    {
+        customWindowMaximizeCallback(maximized);
+        return;
+    }
     if (maximized) CORE.Window.maximized = true;  // The window was maximized
     else CORE.Window.maximized = false;           // The window was restored
 }
+
+RLAPI void SetCustomKeyCallback(CustomKeyCallback callback)
+{
+    customKeyCallback = callback;
+}
+
+RLAPI void SetCustomMouseButtonCallback(CustomMouseButtonCallback callback)
+{
+    customMouseButtonCallback = callback;
+}
+
+RLAPI void SetCustomMouseCursorPosCallback(CustomMouseCursorPosCallback callback)
+{
+    customMouseCursorPosCallback = callback;
+}
+
+RLAPI void SetCustomCharCallback(CustomCharCallback callback)
+{
+    customCharCallback = callback;
+}
+
+RLAPI void SetCustomCursorEnterCallback(CustomCursorEnterCallback callback)
+{
+    customCursorEnterCallback = callback;
+}
+
+RLAPI void SetCustomWindowSizeCallback(CustomWindowSizeCallback callback)
+{
+    customWindowSizeCallback = callback;
+}
+
+RLAPI void SetCustomWindowIconifyCallback(CustomWindowIconifyCallback callback)
+{
+    customWindowIconifyCallback = callback;
+}
+
+RLAPI void SetCustomWindowFocusCallback(CustomWindowFocusCallback callback)
+{
+    customWindowFocusCallback = callback;
+}
+
+RLAPI void SetCustomWindowDropCallback(CustomWindowDropCallback callback)
+{
+    customWindowDropCallback = callback;
+}
+
+RLAPI void SetCustomWindowMaximizeCallback(CustomWindowMaximizeCallback callback)
+{
+    customWindowMaximizeCallback = callback;
+}
+
+
 #endif
 
 #if defined(PLATFORM_ANDROID)

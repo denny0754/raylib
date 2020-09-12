@@ -854,6 +854,18 @@ typedef enum {
 // Callbacks to be implemented by users
 typedef void (*TraceLogCallback)(int logType, const char *text, va_list args);
 
+// Input callbacks to be implemented by users
+typedef void (*CustomKeyCallback)(int key, int scancode, int action, int mods);
+typedef void (*CustomMouseButtonCallback)(int button, int action, int mods);
+typedef void (*CustomMouseCursorPosCallback)(double x, double y);
+typedef void (*CustomCharCallback)(unsigned int key);
+typedef void (*CustomCursorEnterCallback)(int enter);
+typedef void (*CustomWindowSizeCallback)(int width, int height);
+typedef void (*CustomWindowIconifyCallback)(int iconified);
+typedef void (*CustomWindowFocusCallback)(int focused);
+typedef void (*CustomWindowDropCallback)(int count, const char **paths);
+typedef void (*CustomWindowMaximizeCallback)(int maximized);
+
 #if defined(__cplusplus)
 extern "C" {            // Prevents name mangling of functions
 #endif
@@ -950,6 +962,16 @@ RLAPI void SetTraceLogCallback(TraceLogCallback callback);        // Set a trace
 RLAPI void TraceLog(int logType, const char *text, ...);          // Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR)
 RLAPI void TakeScreenshot(const char *fileName);                  // Takes a screenshot of current screen (saved a .png)
 RLAPI int GetRandomValue(int min, int max);                       // Returns a random value between min and max (both included)
+RLAPI void SetCustomKeyCallback(CustomKeyCallback callback);                        // Set a custom key callback
+RLAPI void SetCustomMouseButtonCallback(CustomMouseButtonCallback callback);        // Set a custom mouse button callback
+RLAPI void SetCustomMouseCursorPosCallback(CustomMouseCursorPosCallback callback);  // Set a custom mouse cursor position callback
+RLAPI void SetCustomCharCallback(CustomCharCallback callback);                      // Set a custom char callback
+RLAPI void SetCustomCursorEnterCallback(CustomCursorEnterCallback callback);        // Set a custom cursor enter callback
+RLAPI void SetCustomWindowSizeCallback(CustomWindowSizeCallback callback);          // Set a custom window size callback
+RLAPI void SetCustomWindowIconifyCallback(CustomWindowIconifyCallback callback);    // Set a custom window iconify callback
+RLAPI void SetCustomWindowFocusCallback(CustomWindowFocusCallback callback);        // Set a custom window focus callback
+RLAPI void SetCustomWindowDropCallback(CustomWindowDropCallback callback);          // Set a custom window drop callback
+RLAPI void SetCustomWindowMaximizeCallback(CustomWindowMaximizeCallback callback);  // Set a custom window maximized callback
 
 // Files management functions
 RLAPI unsigned char *LoadFileData(const char *fileName, unsigned int *bytesRead);     // Load file data as byte array (read)
